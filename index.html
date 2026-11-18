@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>KODO和牛燒肉｜現場抽獎券</title>
+
+<script>
+/* ============================================================
+   ★ 店家設定區（日後只需要改這裡）★
+   ============================================================ */
+const CONFIG = {
+  STORE_NAME: "KODO和牛燒肉",          // 店名
+  STORE_LAT: 24.17951351671825,         // 門市緯度
+  STORE_LNG: 120.6816015375161,         // 門市經度
+  MAX_DISTANCE_METERS: 200,             // 允許距離（公尺）；室內 GPS 會飄，建議 150～300
+  OPEN_HOUR: 12,                        // 每日開放時間（含）：12 = 12:00
+  CLOSE_HOUR: 23,                       // 每日結束時間（不含）：23 = 23:00 截止
+  ECHOSS_COUPON_URL: "https://line.me/R/app/2007773083-jNJZX3Ap/?collect=0tP0rcYPsf",
+
+  AUTO_START: false,                    // true = 開啟網頁就自動定位；false = 顧客按按鈕才定位（較穩定，建議 false）
+  GEO_TIMEOUT_MS: 15000,                // 定位逾時（毫秒）
+  REDIRECT_DELAY_MS: 1500               // 驗證成功後，等幾毫秒再跳轉
+};
+/* ============================================================ */
+</script>
+
+<style>
+  :root{
+    --red:#a4131b;
+    --red-deep:#7a0c12;
+    --red-dark:#560508;
+    --gold:#f2c46d;
+    --gold-deep:#d99a2b;
+    --cream:#fffaf0;
+    --ink:#3a1a1a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255,255,255,.12), transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(0,0,0,.25), transparent 45%),
+      repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,.05) 0 2px, transparent 2px 22px),
+      linear-gradient(160deg,var(--red) 0%,var(--red-deep) 60%,var(--red-dark) 100%);
+    background-attachment:fixed;
+    padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+    display:flex;justify-content:center;align-items:flex-start;
+  }
+  .wrap{width:100%;max-width:440px}
+
+  /* 品牌標題 */
+  .brand{text-align:center;color:#fff;margin:6px 0 16px}
+  .brand .tag{
+    display:inline-block;font-size:12px;letter-spacing:.28em;
+    color:var(--gold);border:1px solid rgba(242,196,109,.6);
+    padding:3px 12px;border-radius:99px;margin-bottom:10px
+  }
+  .brand h1{margin:0;font-size:30px;font-weight:900;letter-spacing:.06em;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .brand p{margin:6px 0 0;font-size:13px;letter-spacing:.2em;opacity:.85}
+
+  /* 白色雙框卡片（呼應店招的雙層外框） */
+  .card{
+    position:relative;background:var(--cream);border-radius:22px;
+    padding:26px 22px 24px;
+    box-shadow:0 14px 34px rgba(0,0,0,.38);
+  }
+  .card::before{
+    content:"";position:absolute;inset:7px;border:2px solid var(--red);
+    border-radius:16px;pointer-events:none;opacity:.9
+  }
+  .card > *{position:relative}
+
+  .icon{
+    width:92px;height:92px;margin:0 auto 14px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:46px;
+    background:radial-gradient(circle at 30% 25%,#fff3cf,var(--gold) 60%,var(--gold-deep));
+    box-shadow:0 6px 16px rgba(217,154,43,.5), inset 0 -4px 8px rgba(0,0,0,.08);
+  }
+  .icon.bounce{animation:bounce 1.8s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  h2{margin:0 0 8px;text-align:center;font-size:23px;font-weight:800;color:var(--red-deep)}
+  .desc{margin:0 0 18px;text-align:center;font-size:16px;line-height:1.7}
+  .desc b{color:var(--red)}
+
+  .btn{
+    display:block;width:100%;border:0;cursor:pointer;
+    font-family:inherit;font-size:21px;font-weight:900;letter-spacing:.08em;
+    color:#5a0a0a;padding:19px 12px;border-radius:16px;
+    background:linear-gradient(180deg,#ffe29a,var(--gold) 55%,var(--gold-deep));
+    box-shadow:0 6px 0 #b27a17, 0 12px 22px rgba(0,0,0,.28);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{transform:translateY(5px);box-shadow:0 1px 0 #b27a17, 0 4px 10px rgba(0,0,0,.25)}
+  .btn.pulse{animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.1)}}
+  .btn.secondary{
+    background:#fff;color:var(--red-deep);font-size:18px;
+    border:2px solid var(--red);box-shadow:0 4px 0 rgba(122,12,18,.35);margin-top:12px
+  }
+
+  .hint{margin:14px 0 0;font-size:13px;color:#7a5a5a;text-align:center;line-height:1.6}
+
+  /* Loading */
+  .spinner{
+    width:64px;height:64px;margin:6px auto 18px;border-radius:50%;
+    border:7px solid rgba(164,19,27,.15);border-top-color:var(--red);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .dots::after{content:"";animation:dots 1.4s steps(4,end) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+
+  /* 狀態顏色 */
+  .state-ok h2{color:#1d7a3a}
+  .state-bad h2{color:var(--red)}
+
+  /* 教學區塊 */
+  details{
+    background:#fff;border:1px solid #ecd9c3;border-radius:12px;
+    margin-top:10px;padding:0 14px
+  }
+  summary{
+    cursor:pointer;font-weight:800;font-size:16px;padding:13px 0;color:var(--red-deep);
+    list-style:none
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"＋";float:right;color:var(--red)}
+  details[open] summary::after{content:"－"}
+  details ol{margin:0 0 14px;padding-left:20px;font-size:15px;line-height:1.85}
+  .debug{
+    margin-top:14px;padding:10px 12px;background:#222;color:#9ef0a8;border-radius:10px;
+    font:12px/1.6 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all
+  }
+  .hidden{display:none !important}
+  .foot{margin-top:16px;text-align:center;color:rgba(255,255,255,.7);font-size:12px;letter-spacing:.1em}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header class="brand">
+    <span class="tag">YAKINIKU RESTAURANT</span>
+    <h1 id="storeName">KODO和牛燒肉</h1>
+    <p>JAPANESE WAGYU BEEF</p>
+  </header>
+
+  <main class="card" id="card">
+    <!-- 內容由 JS 依狀態渲染 -->
+  </main>
+
+  <div class="foot">本活動僅限門市現場顧客參加</div>
+</div>
+
+<script>
+/* ============================================================
+   以下為程式邏輯，一般情況不需修改
+   ============================================================ */
+const card = document.getElementById("card");
+const params = new URLSearchParams(location.search);
+const DEBUG = params.get("debug") === "1";   // 店家測試模式：加上 ?debug=1，會顯示距離與精準度，且「不會」跳轉
+
+document.getElementById("storeName").textContent = CONFIG.STORE_NAME;
+document.title = CONFIG.STORE_NAME + "｜現場抽獎券";
+
+/* ---------- 小工具 ---------- */
+const pad = n => String(n).padStart(2, "0");
+const openText = () => `${pad(CONFIG.OPEN_HOUR)}:00–${pad(CONFIG.CLOSE_HOUR)}:00`;
+
+function render(html){ card.innerHTML = html; }
+
+/* Haversine 公式：回傳兩點直線距離（公尺） */
+function haversine(lat1, lon1, lat2, lon2){
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/* ---------- 時間判斷（以台北時間為準） ---------- */
+// 優先取「伺服器時間」（HTTP Date header），避免顧客手機時間被改；取不到就退回手機時間
+async function getNow(){
+  try{
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3000);
+    const res = await fetch(location.pathname + "?_=" + Date.now(), {
+      method: "HEAD", cache: "no-store", signal: ctrl.signal
+    });
+    clearTimeout(t);
+    const d = res.headers.get("Date");
+    if (d){ const dt = new Date(d); if (!isNaN(dt)) return dt; }
+  }catch(e){ /* 忽略，使用手機時間 */ }
+  return new Date();
+}
+
+function taipeiHour(date){
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Taipei", hour: "2-digit", hour12: false
+  }).formatToParts(date);
+  const h = parseInt(parts.find(p => p.type === "hour").value, 10);
+  return h % 24;
+}
+
+function isOpenNow(date){
+  const h = taipeiHour(date);
+  const { OPEN_HOUR: o, CLOSE_HOUR: c } = CONFIG;
+  return o < c ? (h >= o && h < c) : (h >= o || h < c);   // 也支援跨午夜
+}
+
+/* ---------- 各狀態畫面 ---------- */
+function showIdle(){
+  render(`
+    <div class="icon bounce">🎁</div>
+    <h2>現場抽獎券 免費領</h2>
+    <p class="desc">歡迎光臨 <b>${CONFIG.STORE_NAME}</b>！<br>請按下方按鈕，確認您人在店內，即可領取抽獎券。</p>
+    <button class="btn pulse" id="startBtn">立即驗證並領取抽獎券</button>
+    <p class="hint">按下後手機會詢問「是否允許存取位置」<br>請選擇<b>「允許」</b>。位置只用來確認您在店內。</p>
+    ${DEBUG ? '<div class="debug">【測試模式】不會跳轉，只顯示定位結果</div>' : ""}
+  `);
+  document.getElementById("startBtn").addEventListener("click", startVerify);
+}
+
+function showLoading(){
+  render(`
+    <div class="spinner"></div>
+    <h2>定位驗證中<span class="dots"></span></h2>
+    <p class="desc">正在確認您的位置，請稍候幾秒鐘。<br>若跳出詢問視窗，請點選<b>「允許」</b>。</p>
+  `);
+}
+
+function showClosed(){
+  render(`
+    <div class="icon">🌙</div>
+    <h2>目前不在活動時段</h2>
+    <p class="desc">活動尚未開始或已結束。<br>每日開放時間：<b>${openText()}</b><br>歡迎於營業時間再來領取！</p>
+  `);
+}
+
+function showSuccess(dist){
+  render(`
+    <div class="state-ok">
+      <div class="icon">🎉</div>
+      <h2>驗證成功！</h2>
+      <p class="desc">歡迎光臨 <b>${CONFIG.STORE_NAME}</b>！<br>正在帶您前往領取抽獎券…</p>
+      <div class="spinner" style="border-top-color:#1d7a3a"></div>
+      <a class="btn secondary" id="manualLink" href="${CONFIG.ECHOSS_COUPON_URL}">若沒有自動跳轉，請按這裡</a>
+    </div>
+  `);
+  document.getElementById("manualLink").addEventListener("click", e => {
+    e.preventDefault(); goCoupon();
+  });
+}
+
+function showTooFar(dist, accuracy){
+  const lowAcc = accuracy && accuracy > 500;
+  render(`
+    <div class="state-bad">
+      <div class="icon">📍</div>
+      <h2>您似乎不在門市現場</h2>
+      <p class="desc">您目前距離門市約 <b>${Math.round(dist)} 公尺</b>。<br>本活動僅限<b>門市現場顧客</b>參與。</p>
+      ${lowAcc ? `<p class="hint" style="margin-top:0">⚠️ 目前定位精準度偏低（誤差約 ${Math.round(accuracy)} 公尺）。<br>若您人就在店內，請移到窗邊或門口，再按一次重試。</p>` : ""}
+      <button class="btn" id="retryBtn">我在店內，重新定位</button>
+    </div>
+  `);
+  document.getElementById("retryBtn").addEventListener("click", startVerify);
+}
+
+const GUIDE_HTML = `
+  <details>
+    <summary>🍎 iPhone（iOS）怎麼開？</summary>
+    <ol>
+      <li>打開手機「<b>設定</b>」→「<b>隱私權與安全性</b>」→「<b>定位服務</b>」，確認已<b>開啟</b>。</li>
+      <li>往下滑找到「<b>LINE</b>」，選擇「<b>使用 App 期間</b>」，並打開「<b>精確位置</b>」。</li>
+      <li>回到 LINE，重新掃描 QR Code（或按下方「重新驗證」）。</li>
+    </ol>
+  </details>
+  <details>
+    <summary>🤖 Android 怎麼開？</summary>
+    <ol>
+      <li>從螢幕上方往下滑，打開快速選單，點亮「<b>位置資訊 / GPS</b>」。</li>
+      <li>或到「<b>設定</b>」→「<b>位置資訊</b>」→ 開啟。</li>
+      <li>「<b>設定</b>」→「<b>應用程式</b>」→「<b>LINE</b>」→「<b>權限</b>」→「<b>位置資訊</b>」→ 選「<b>僅在使用應用程式時允許</b>」，並開啟「<b>使用精確位置</b>」。</li>
+      <li>回到 LINE，按下方「重新驗證」。</li>
+    </ol>
+  </details>
+`;
+
+function showError(err){
+  let icon = "⚠️", title = "無法取得您的位置", desc = "";
+  if (err.code === 1){            // PERMISSION_DENIED
+    icon = "🔒"; title = "尚未允許位置權限";
+    desc = "需要您允許「位置」權限，才能確認您在店內。<br>請依照下方教學開啟後，再按「重新驗證」。";
+  } else if (err.code === 2){     // POSITION_UNAVAILABLE
+    icon = "🛰️"; title = "手機沒有開啟定位（GPS）";
+    desc = "請先把手機的<b>「定位 / 位置資訊」</b>打開，<br>並可移動到窗邊或門口，訊號會更好。";
+  } else if (err.code === 3){     // TIMEOUT
+    icon = "⏳"; title = "定位時間太久了";
+    desc = "目前收不到定位訊號。<br>請確認已開啟定位，移動到窗邊或門口後再試一次。";
+  } else {
+    desc = "發生未知錯誤，請稍後再試，或洽現場服務人員。";
+  }
+  render(`
+    <div class="state-bad">
+      <div class="icon">${icon}</div>
+      <h2>${title}</h2>
+      <p class="desc">${desc}</p>
+      <button class="btn" id="retryBtn">重新驗證</button>
+      ${GUIDE_HTML}
+      <p class="hint">仍然無法使用？請洽現場服務人員協助。</p>
+      ${DEBUG ? `<div class="debug">error.code=${err.code}\nmessage=${err.message || ""}</div>` : ""}
+    </div>
+  `);
+  document.getElementById("retryBtn").addEventListener("click", startVerify);
+}
+
+function showUnsupported(){
+  render(`
+    <div class="icon">📵</div>
+    <h2>此瀏覽器不支援定位</h2>
+    <p class="desc">請在<b>手機的 LINE</b> 中重新掃描 QR Code，<br>或洽現場服務人員協助。</p>
+  `);
+}
+
+function showInsecure(){
+  render(`
+    <div class="icon">🔐</div>
+    <h2>網頁需使用 HTTPS</h2>
+    <p class="desc">定位功能只能在 https:// 開頭的網址使用。<br>（店家請檢查 QR Code 網址）</p>
+  `);
+}
+
+/* ---------- 跳轉 ---------- */
+function goCoupon(){
+  try{
+    window.top.location.replace(CONFIG.ECHOSS_COUPON_URL);
+  }catch(e){
+    window.location.replace(CONFIG.ECHOSS_COUPON_URL);   // 被 iframe 限制時的備援
+  }
+}
+
+/* ---------- 主流程 ---------- */
+async function startVerify(){
+  if (!window.isSecureContext && location.hostname !== "localhost"){ showInsecure(); return; }
+  if (!("geolocation" in navigator)){ showUnsupported(); return; }
+
+  showLoading();
+
+  // 1) 時間鎖（測試模式略過）
+  if (!DEBUG){
+    const now = await getNow();
+    if (!isOpenNow(now)){ showClosed(); return; }
+  }
+
+  // 2) 定位
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      const dist = haversine(latitude, longitude, CONFIG.STORE_LAT, CONFIG.STORE_LNG);
+
+      if (DEBUG){
+        render(`
+          <div class="icon">🧪</div>
+          <h2>測試模式結果</h2>
+          <div class="debug">距離門市：${dist.toFixed(1)} 公尺
+允許距離：${CONFIG.MAX_DISTANCE_METERS} 公尺
+判定：${dist <= CONFIG.MAX_DISTANCE_METERS ? "✅ 通過" : "❌ 不通過"}
+定位誤差(accuracy)：${accuracy ? accuracy.toFixed(0) : "?"} 公尺
+手機座標：${latitude}, ${longitude}
+門市座標：${CONFIG.STORE_LAT}, ${CONFIG.STORE_LNG}
+台北時間小時：${taipeiHour(new Date())} 點</div>
+          <button class="btn secondary" id="retryBtn">再測一次</button>
+        `);
+        document.getElementById("retryBtn").addEventListener("click", startVerify);
+        return;
+      }
+
+      if (dist <= CONFIG.MAX_DISTANCE_METERS){
+        showSuccess(dist);
+        setTimeout(goCoupon, CONFIG.REDIRECT_DELAY_MS);
+      } else {
+        showTooFar(dist, accuracy);
+      }
+    },
+    err => showError(err),
+    { enableHighAccuracy: true, maximumAge: 0, timeout: CONFIG.GEO_TIMEOUT_MS }
+  );
+}
+
+/* ---------- 啟動 ---------- */
+(async function init(){
+  if (!DEBUG){
+    const now = await getNow();
+    if (!isOpenNow(now)){ showClosed(); return; }
+  }
+  if (CONFIG.AUTO_START && !DEBUG) startVerify(); else showIdle();
+})();
+</script>
+</body>
+</html>
